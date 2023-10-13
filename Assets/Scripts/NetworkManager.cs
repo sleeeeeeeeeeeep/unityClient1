@@ -9,6 +9,12 @@ using UnityEngine;
 public class NetworkManager : MonoBehaviour
 {
     ServerSession _session = new ServerSession();
+
+    public void Send(ArraySegment<byte> sendBuffer)
+    {
+        _session.Send(sendBuffer);
+    }
+
     // Start is called before the first frame update
     void Start()
     {
@@ -22,31 +28,18 @@ public class NetworkManager : MonoBehaviour
 
         connector.Connect(endPoint, () => { return _session; }, 1);
 
-        StartCoroutine("CoSendPacket");
     }
 
     // Update is called once per frame
     void Update()
     {
-        IPacket packet = PacketQueue.Instance.Pop();
+        List<IPacket> list = PacketQueue.Instance.PopAll();
 
-        if(packet != null)
+        foreach(IPacket packet in list)
         {
             PacketManager.Instatnce.HandlePacket(_session, packet);
         }
     }
 
-    IEnumerator CoSendPacket()
-    {
-        while(true)
-        {
-            yield return new WaitForSeconds(3.0f);
-
-            C_Chat chatPacket = new C_Chat();
-            chatPacket.chat = "유니티에서 보냄";
-            ArraySegment<byte> segment = chatPacket.Write();
-
-            _session.Send(segment);
-        }
-    }
+    
 }
